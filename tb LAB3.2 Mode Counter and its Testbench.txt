@@ -1,0 +1,103 @@
+// Testbench for the 32-bit Counter
+module testbench;
+    // Testbench Signals
+    logic clk;
+    logic rst;
+    logic enable;
+    logic up_down;
+    logic load;
+    logic [31:0] din;
+    logic [31:0] sat_value;
+    logic [2:0] mode;
+    logic timer_event;
+    logic [31:0] count;
+
+// Instantiate the counter
+    counter_32bit dut (
+        .clk(clk),
+        .rst(rst),
+        .enable(enable),
+        .up_down(up_down),
+        .load(load),
+        .din(din),
+        .sat_value(sat_value),
+        .mode(mode),
+        .timer_event(timer_event),
+        .count(count)
+    );
+
+// Clock generation
+    initial begin
+        clk = 0;
+        forever #5 clk = ~clk; // 10ns clock period
+    end
+
+// Display function
+    task display_status();
+        $display("Time: %0t | Count: %0d | Mode: %0d | Up/Down: %0d | Timer Event: %0d | Saturation Value: %0d", 
+                 $time, count, mode, up_down, timer_event, sat_value);
+    endtask
+
+// Run the test sequence
+    initial begin
+        // Initialize signals
+        rst = 1;
+        enable = 0;
+        up_down = 0;
+        load = 0;
+        din = 0;
+        sat_value = 32'd50;  // Set saturation value for testing
+        mode = 3'd0;         // Set mode for counting by 1
+        
+// Reset the counter
+        #10;
+        rst = 0;
+
+// Load a value
+        load = 1; din = 32'd10; #10;
+        load = 0; enable = 1; up_down = 1; // Count up
+
+// Count up and display status
+        repeat(5) begin
+            #10;
+            display_status();
+        end
+
+// Change mode to count by 2
+        mode = 3'd5; // Count up by 2
+        repeat(5) begin
+            #10;
+            display_status();
+        end
+
+// Change mode to count by 4
+        mode = 3'd2; // Count up by 4
+        repeat(5) begin
+            #10;
+            display_status();
+        end
+
+// Test saturation value
+        mode = 3'd0; // Count by 1
+        up_down = 1; // Count up
+        repeat(50) begin
+            #10;
+            display_status();
+        end
+
+// Load a new value
+        load = 1; din = 32'd20; #10;
+        load = 0; 
+        display_status();
+
+// Count down
+        up_down = 0; // Count down
+        repeat(10) begin
+            #10;
+            display_status();
+        end
+
+// Finish simulation
+        $finish;
+    end
+endmodule

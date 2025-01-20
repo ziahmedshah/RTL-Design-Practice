@@ -1,0 +1,79 @@
+module test;
+  reg [7:0] bufz [511:0];  // 8-bit wide, 512-entry buffer
+  logic CLK; // Clock signal 
+  
+//Semaphore to allow only one task access at a time
+  semaphore sem = new(1);  
+  
+//----------------Read function to retrieve data from buffer---------------
+  function [7:0] rd_data(input bit [8:0] addr);
+    return bufz[addr];
+  endfunction
+//----------------Read function to retrieve data from buffer---------------
+  
+//----------------Write Task A (start)--------------------------
+  task wr_a(bit [8:0] addr_a, bit [7:0] d_a);
+    sem.get();  // Acquire semaphore token
+    bufz[addr_a] = d_a;
+    $display("Time: %0t | wr_a: Writing %0d at addr %0d", $time, d_a, addr_a);
+    // Read back via read function to verify
+    $display("Time: %0t | rd_a: Read back %0d from addr %0d", $time, rd_data(addr_a), addr_a);
+    sem.put();  // Release token
+  endtask
+//----------------Write Task A (ends)---------------------------
+  
+//----------------Write Task B (starts)-------------------------
+  task wr_b(bit [8:0] addr_b, bit [7:0] d_b);
+    sem.get();  // Acquire semaphore token
+    bufz[addr_b] = d_b;
+    $display("Time: %0t | wr_b: Writing %0d at addr %0d", $time, d_b, addr_b);
+    
+    // Read back via read function to verify
+    $display("Time: %0t | rd_b: Read back %0d from addr %0d", $time, rd_data(addr_b), addr_b);
+    
+    sem.put();  // Release token
+  endtask
+//----------------Write Task B (ends)---------------------------
+ 
+//--------------------------Random values generator (start)-----------------------------  
+// Process A: Writes random data to random addresses
+  task proc_a();
+    bit [8:0] addr;
+    bit [7:0] din;
+    while (1) begin
+      addr = $urandom() % 512;  // Random address
+      din = $urandom() % 256;   // Random 8-bit data
+      wr_a(addr, din);          // Call write task A
+      @ (posedge CLK);          // Wait for clock edge
+    end
+  endtask
+// Process B: Writes random data to random addresses
+  task proc_b();
+    bit [8:0] addr;
+    bit [7:0] din;
+    while (1) begin
+      addr = $urandom() % 512;  // Random address
+      din = $urandom() % 256;   // Random 8-bit data
+      wr_b(addr, din);          // Call write task B
+      @ (posedge CLK);          // Wait for clock edge
+    end
+  endtask
+//--------------------------Random values generator (end)-----------------------------
+
+// Clock generation
+  initial begin
+    CLK = 0;
+    forever #5 CLK = ~CLK;  // Toggle every 5 time units
+  end
+  
+  // Testbench logic
+  initial begin
+    fork
+      proc_a();  // Start Process A
+      proc_b();  // Start Process B
+    join_none
+
+    // Run the simulation for 1000 time units and terminate
+    #1000 $finish;
+  end
+endmodule

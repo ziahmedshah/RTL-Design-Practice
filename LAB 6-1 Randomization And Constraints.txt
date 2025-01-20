@@ -1,0 +1,56 @@
+class Packet;
+//-------------------Fields-------------------------------
+  // Randamize dest and Source addr
+    rand bit [47:0] destination;  
+    rand bit [47:0] source;  
+  // 16-bit length field
+    rand bit [15:0] length; 
+  // 32-bit CRC reserved but not implemented
+    bit [31:0] crc;    
+  // Dynamic payload array
+    byte payload[];       
+//-------------------Constraints---------------------------
+  // Constraint: Length varies bw 64-1518 bytes in a bursty fashion (Uneven packet size)
+    constraint length_c {length inside {[64:1518]};}
+  // Constraint: Generate bursty lengths (e.g., similar lengths in sequence)
+    constraint bursty_c {
+        if (length < 512) 
+          length < 1024;
+        else 
+          length > 512;
+    }
+
+    // Constructor
+    function new();
+      payload = new[1500];  // Allocate max payload size in a dynamic array. 0-1500
+    endfunction
+
+    // Task to generate packet and print its fields
+    task generate_packet();
+        if (!this.randomize()) begin
+            $display("ERROR: Randomization failed!");
+            return;
+        end
+        $display("Generated Packet:");
+        $display("Destination: %h", destination);
+        $display("Source: %h", source);
+        $display("Length: %0d", length);
+
+        // Truncate the payload to match the generated length
+        payload = new[length - 18];  // Exclude 18 bytes (headers + CRC)
+        $display("Payload Size: %0d bytes", payload.size());
+    endtask
+endclass
+
+// Testbench Module
+module test;
+    initial begin
+        Packet pkt = new();  // Instantiate the packet class
+
+        // Generate multiple packets to observe bursty behavior
+      repeat (9) begin
+            pkt.generate_packet();
+            #5;  // Small delay between packet generations
+        end
+    end
+endmodule

@@ -1,0 +1,77 @@
+module fifo (
+    input  logic clk, 
+    input  logic rst, 
+    input  logic [31:0] din,  // Data input
+    input  logic pop,         // Pop control signal
+    input  logic push,        // Push control signal
+    input  logic dump,        // Dump memory contents signal
+    output logic [31:0] dout, // Data output
+    output logic empty,       // FIFO empty flag
+    output logic full         // FIFO full flag
+);
+    // Parameters
+    parameter DW = 32; // Data width
+    parameter AW = 9;  // Address width (for 512 entries)
+    parameter RS = 512; // FIFO depth
+
+    // Internal memory and pointers
+    logic [DW-1:0] mem[RS-1:0]; // FIFO memory array
+    reg [AW-1:0] wr_ptr;        // Write pointer
+    reg [AW-1:0] rd_ptr;        // Read pointer
+    reg [AW:0] cnt;             // Counter for tracking occupancy
+
+    // Dump task to print the contents of memory
+    task shmem();
+        $write("MEMDUMP:@@%0t ", $time);
+        for (int i = 0; i < RS; i++) begin
+            $write("%0d:%0h, ", i, mem[i]);
+        end
+        $write("\n");
+    endtask
+
+    // Dump memory when 'dump' signal is asserted
+    always @(dump) begin
+        if (dump) begin
+            shmem();
+        end
+    end
+
+    // Flags to indicate full and empty states
+    assign full = (cnt == RS);
+    assign empty = (cnt == 0) || (pop && cnt == 1);
+
+    // Update write pointer on a positive clock edge
+    always @(posedge clk) begin
+        if (rst) begin
+            wr_ptr <= 0;
+        end else if (push && !full) begin
+            wr_ptr <= wr_ptr + 1;
+            mem[wr_ptr] <= din;  // Store data in memory
+        end
+    end
+
+    // Update read pointer on a positive clock edge
+    always @(posedge clk) begin
+        if (rst) begin
+            rd_ptr <= 0;
+        end else if (pop && !empty) begin
+            rd_ptr <= rd_ptr + 1;
+        end
+    end
+
+    // Read data from memory (combinational logic)
+    always @* begin
+        dout = (pop && !empty) ? mem[rd_ptr] : 32'hx;
+    end
+
+    // Update the counter to track the number of elements in the FIFO
+    always @(posedge clk) begin
+        if (rst) begin
+            cnt <= 0;
+        end else if (push && !pop) begin
+            cnt <= cnt + 1;
+        end else if (pop && !push) begin
+            cnt <= cnt - 1;
+        end
+    end
+endmodule

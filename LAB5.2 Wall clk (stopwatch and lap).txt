@@ -1,0 +1,155 @@
+`timescale 1ms/1us
+
+class Wallclock;
+    // Wall Clock Data Members
+    int hours;
+    int minutes;
+    int seconds;
+
+    // Stopwatch Data Members
+    int stopwatch_hours;
+    int stopwatch_minutes;
+    int stopwatch_seconds;
+    int lap_hours, lap_minutes, lap_seconds;
+    int lap_count;
+    bit stopwatch_running;
+
+    // Constructor
+    function new();
+        hours = 0;
+        minutes = 0;
+        seconds = 0;
+        stopwatch_hours = 0;
+        stopwatch_minutes = 0;
+        stopwatch_seconds = 0;
+        lap_hours = 0;
+        lap_minutes = 0;
+        lap_seconds = 0;
+        lap_count = 0;
+        stopwatch_running = 0;
+    endfunction
+
+    // Wall Clock Update Method
+    function void update_time();
+        seconds += 1;
+        if (seconds >= 60) begin
+            seconds = 0;
+            minutes += 1;
+        end
+        if (minutes >= 60) begin
+            minutes = 0;
+            hours += 1;
+        end
+        if (hours >= 24) begin
+            hours = 0;
+        end
+    endfunction
+
+    // Stopwatch Update Method
+    function void update_stopwatch();
+        if (stopwatch_running) begin
+            stopwatch_seconds += 1;
+            if (stopwatch_seconds >= 60) begin
+                stopwatch_seconds = 0;
+                stopwatch_minutes += 1;
+            end
+            if (stopwatch_minutes >= 60) begin
+                stopwatch_minutes = 0;
+                stopwatch_hours += 1;
+            end
+        end
+    endfunction
+
+    // Start Stopwatch
+    function void start_stopwatch();
+        stopwatch_running = 1;
+    endfunction
+
+    // Stop Stopwatch
+    function void stop_stopwatch();
+        stopwatch_running = 0;
+    endfunction
+
+    // Reset Stopwatch
+    function void reset_stopwatch();
+        stopwatch_hours = 0;
+        stopwatch_minutes = 0;
+        stopwatch_seconds = 0;
+        lap_count = 0;
+    endfunction
+
+    // Record a Lap
+    function void lap();
+        lap_count += 1;
+        lap_hours = stopwatch_hours;
+        lap_minutes = stopwatch_minutes;
+        lap_seconds = stopwatch_seconds;
+        $display("Lap %0d Time: %02d:%02d:%02d", lap_count, lap_hours, lap_minutes, lap_seconds);
+    endfunction
+
+    // Display Wall Clock Time
+    function void display_time();
+        $display("Current Time: %02d:%02d:%02d", hours, minutes, seconds);
+    endfunction
+
+    // Display Stopwatch Time
+    function void display_stopwatch();
+        $display("Stopwatch Time: %02d:%02d:%02d", stopwatch_hours, stopwatch_minutes, stopwatch_seconds);
+    endfunction
+endclass
+
+// Testbench Module
+module test;
+    logic time_tick;
+    Wallclock clock;
+
+    // Initialize the Wallclock object
+    initial begin
+        clock = new();
+        time_tick = 0;
+        $display("Starting Wall Clock and Stopwatch Simulation");
+    end
+
+    // Generate a time tick every 1 ms
+    always begin
+        #500 time_tick = ~time_tick;  // Toggle every 1 ms (1000 ms = 1 second)
+    end
+
+    // Update the wall clock and stopwatch on each tick
+  // dot operator calling each block members
+    always @(posedge time_tick) begin
+        clock.update_time();  // Update wall clock
+        clock.update_stopwatch();  // Update stopwatch if running
+        clock.display_time();  // Display wall clock time
+        clock.display_stopwatch();  // Display stopwatch time
+      clock.start_stopwatch();
+    end
+
+    // Control the Stopwatch using Initial Blocks
+    initial begin
+        #1;  // Wait 1 second
+        $display("Starting the Stopwatch...");
+        clock.start_stopwatch();  // Start stopwatch
+
+        #3;  // Wait 3 seconds
+        $display("Recording Lap 1...");
+        clock.lap();  // Record the first lap
+
+        #2;  // Wait 2 more seconds
+        $display("Stopping the Stopwatch...");
+        clock.stop_stopwatch();  // Stop stopwatch
+
+        #1;  // Wait 1 second
+        $display("Restarting the Stopwatch...");
+        clock.start_stopwatch();  // Restart the stopwatch
+
+        #2;  // Wait 2 more seconds
+        $display("Recording Lap 2...");
+        clock.lap();  // Record the second lap
+
+        #1;  // Stop and Reset Stopwatch
+        $display("Stopping and Resetting the Stopwatch...");
+        clock.stop_stopwatch();
+        clock.reset_stopwatch();
+    end
+endmodule

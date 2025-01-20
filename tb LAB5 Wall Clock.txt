@@ -1,0 +1,22 @@
+module test ();
+    logic time_tick;
+    Wallclock clock;
+
+    // Initialize the clock
+    initial begin
+        clock = new();
+        time_tick = 0;
+        $display("Starting Wall Clock Simulation");
+    end
+
+    // Generate a time tick every 1 ms
+    always begin
+        #500 time_tick = ~time_tick; // Toggle every 1 ms (1000 ms = 1s)
+    end
+
+    // Update the wall clock on each time tick
+    always @(posedge time_tick) begin
+        clock.update_time(); // Update time on each tick
+        clock.display_time(); // Display current time
+    end
+endmodule

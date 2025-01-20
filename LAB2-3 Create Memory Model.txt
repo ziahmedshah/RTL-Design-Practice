@@ -1,0 +1,56 @@
+module memory_47x64K;
+// Parameters for memory configuration
+// Width of each word
+  parameter WIDTH = 47;
+// 16K words per bank (2^14)
+  parameter DEPTH = 16384;
+// Number of banks
+  parameter BANKS = 4;         
+// 4 Banks of 47-bit × 16K Memory
+  logic [WIDTH-1:0] mem [BANKS-1:0][DEPTH-1:0];
+// Read and Write Ports
+// Bank selector (2-bit to choose 1 of 4 banks)
+  logic [1:0] bank_select;     
+// Address (14-bit for 16K)
+  logic [$clog2(DEPTH)-1:0] addr; 
+// Data to be written (47 bits)  
+  logic [WIDTH-1:0] write_data;
+// Data read (47 bits)
+  logic [WIDTH-1:0] read_data;
+// Write enable signal
+  logic write_enable;             
+//--------------------------
+// Write Port
+  always_ff @(posedge write_enable) begin
+    if (write_enable) begin
+// Write data to the selected bank
+      mem[bank_select][addr] <= write_data;  
+      $display("Write: Bank=%0d Addr=%0h Data=%h", bank_select, addr, write_data);
+    end
+  end
+// Read Port
+  always_comb begin
+// Read data from the selected bank
+    read_data = mem[bank_select][addr];  
+    $display("Read: Bank=%0d Addr=%0h Data=%h", bank_select, addr, read_data);
+  end
+//-------------Testbench (for verification)
+  initial begin
+// Example write to Bank 4, Address 0x1234
+    bank_select = 2'b11;
+    addr = 14'h1234;
+    write_data = 47'h1ABCDEF12345;
+    write_enable = 1; 
+    #5 write_enable = 0;  // Turn off write after 5 time units
+
+// Example read from Bank 1, Address 0x1234
+    #10;  // Wait for some time
+    bank_select = 2'b01;
+    bank_select = 2'b11;
+    addr = 14'h1234;
+    #5;  // Allow time for read to complete
+
+    $finish;  // End simulation
+  end
+
+endmodule

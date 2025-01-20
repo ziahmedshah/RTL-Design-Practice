@@ -1,0 +1,68 @@
+interface counter_if;
+  logic enable, load, inc, dec, clr, done;  // Control signals
+  logic [31:0] din, count;                  // Data signals
+endinterface
+
+module test;
+
+  // Global Clock and Reset Signals
+  logic clk, reset;
+
+  // Instantiate the Interface
+  counter_if counter_intf();
+
+  // Instantiate the DUT, connect interface + global signals
+  tcounter tcntr (
+    .clk(clk),
+    .reset(reset),
+    .intf(counter_intf)  // Connect interface to DUT
+  );
+
+  // Clock Generation: 10ns Period
+  initial clk = 0;
+  always #5 clk = ~clk;
+
+  // Test Procedure
+  initial begin
+    // Initialize all signals
+    reset = 0;
+    counter_intf.enable = 0;
+    counter_intf.load = 0;
+    counter_intf.inc = 0;
+    counter_intf.dec = 0;
+    counter_intf.clr = 0;
+
+    // Apply Reset
+    repeat (10) @(posedge clk);
+    reset = 1;
+    repeat (25) @(posedge clk);
+    reset = 0;
+    
+    // Task to Load Counter with a Value
+  task ld_ctr(input logic [31:0] cntr_value);
+    #1 counter_intf.enable = 0;
+    #1 counter_intf.clr = 1;
+    #1 counter_intf.load = 1;
+    counter_intf.din = cntr_value;
+    #1 counter_intf.load = 0;
+  endtask
+
+    // Load Counter with 160
+    ld_ctr(160);
+    #1 counter_intf.enable = 1;
+    counter_intf.dec = 1;
+
+    // Decrement Counter
+    repeat (160) @(posedge clk);
+    if (counter_intf.done != 1) begin
+      $display("ERROR: Counter did not decrement to zero!");
+      $finish;
+    end else begin
+      $display("SUCCESS: Counter decremented to zero.");
+    end
+
+    $finish;  // End Simulation
+  end
+
+
+endmodule

@@ -1,0 +1,13 @@
+//Hello World Using Tasks
+module hello_world ();
+  
+  task greet (string greeting);
+    $display ("%0t %s",  $time, greeting);
+  endtask
+  
+  initial begin
+    greet ("-Zia here & its my first systemverilog program-");
+  	$finish;
+  end
+  
+endmodule

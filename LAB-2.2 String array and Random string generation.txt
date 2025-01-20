@@ -1,0 +1,43 @@
+class StringArrayGenerator;
+    string sarr[256];  // Array of 256 strings
+
+    // Function to generate a random string of a given length
+    function string generate_random_string(int length);
+        string rand_str = "";
+        int i;
+        for (i = 0; i < length; i++) begin
+            rand_str = {rand_str, $urandom_range(126, 33)};  
+            // Random ASCII character between 33 ('!') and 126 ('~')
+        end
+        return rand_str;
+    endfunction
+
+    // Task to initialize the array with random strings
+    task initialize();
+        int index;
+        for (index = 0; index < 256; index++) begin
+            sarr[index] = generate_random_string($urandom_range(5, 10));
+            // Random string length between 5 and 10
+        end
+    endtask
+
+    // Task to print all the strings in the array
+    task print();
+        int index;
+        for (index = 0; index < 256; index++) begin
+            $display("String[%0d]: %s", index, sarr[index]);
+        end
+    endtask
+endclass
+
+module string_array_test;
+    StringArrayGenerator generator;  // Create an object of the class
+
+    initial begin
+        // Instantiate the class and initialize the array
+        generator = new();
+        generator.initialize();  // Initialize the array with random strings
+        generator.print();        // Print all the strings
+        $finish;
+    end
+endmodule

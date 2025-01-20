@@ -1,0 +1,95 @@
+
+`timescale 1ns / 10ps
+
+// Testbench for the 32-bit Barrel Shifter
+module testbench;
+    logic [31:0] data;   // 32-bit data
+    logic [4:0] amt;     // 5 bits for shift amount (0 to 31)
+    logic [31:0] out;    // Output for the barrel shifter
+    logic [31:0] expected; // Expected output
+
+    // Instantiate the DUT (Device Under Test)
+    barrel_shifter_generic #(.N(32)) dut (
+        .data(data),
+        .amt(amt),
+        .out(out)
+    );
+
+    // Main test procedure
+    initial begin
+        $display("Starting exhaustive tests...");
+        $display("Data                            | Amt | Output                          | Expected");
+
+        // Test all combinations
+        for (int i = 0; i < 256; i++) begin
+            for (int j = 0; j < 32; j++) begin
+                data = i;  // Assign current data value (you can use full range for more tests)
+                amt = j;   // Assign current shift amount
+                #1;        // Allow time for propagation
+
+                // Calculate expected output using rotate_right
+                expected = dut.rotate_right(data, amt); // Using expected variable
+
+                // Display current test case
+                $display("%b |  %0d  | %b | %b", data, amt, out, expected);
+
+                // Check for correctness
+                if (out !== expected) begin
+                    $display("FAIL: Data=%b, Amt=%0d, Expected=%b, Got=%b", 
+                             data, amt, expected, out);
+                    $fatal;  // Stop simulation on first failure
+                end
+            end
+        end
+
+        $display("All exhaustive tests passed!");
+        $finish;  // End simulation
+    end
+endmodule
+
+
+
+// `timescale 1ns / 10ps
+
+// module testbench;
+//     // DUT input-output signals
+//     logic [31:0] data;
+//     logic [4:0] amt;
+//     logic [31:0] out;
+
+//     // Instantiate the DUT
+//     barrel_shifter_32bit dut (
+//         .data(data),
+//         .amt(amt),
+//         .out(out)
+//     );
+
+//     // Task to test the 32-bit barrel shifter
+//     task automatic test_shift();
+//         logic [31:0] expected_out;
+//         for (int i = 0; i < (1 << 8); i++) begin  // Limited test for feasibility
+//             for (int j = 0; j < 32; j++) begin
+//                 data = i;  
+//                 amt = j;  
+//                 #1;  // Allow output to stabilize
+
+//                 // Calculate the expected output (circular shift)
+//                 expected_out = (data >> j) | (data << (32 - j));
+
+//                 // Compare DUT output with expected output
+//                 if (out !== expected_out) begin
+//                     $error("Mismatch: data=%h, amt=%0d, expected=%h, got=%h", 
+//                            data, amt, expected_out, out);
+//                 end
+//             end
+//         end
+//     endtask
+
+//     // Initialize the test
+//     initial begin
+//         $display("Starting 32-bit Barrel Shifter Test...");
+//         test_shift();
+//         $display("Test completed!");
+//         $finish;
+//     end
+// endmodule

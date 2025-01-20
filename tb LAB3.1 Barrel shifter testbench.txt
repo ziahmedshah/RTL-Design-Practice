@@ -1,0 +1,165 @@
+`timescale 1ns / 10ps
+
+module testbench;
+    reg [7:0] data;
+    reg [2:0] amt;
+    wire [7:0] out;
+
+    // Instantiate the DUT (Device Under Test)
+    barrel_shifter_8bit dut (
+        .data(data),
+        .amt(amt),
+        .out(out)
+    );
+
+    // Reference function for rotation
+    function [7:0] rotate_right(input [7:0] d, input [2:0] a);
+        rotate_right = (d >> a) | (d << (8 - a));
+    endfunction
+
+    // Main test procedure
+    initial begin
+        $display("Starting exhaustive tests...");
+        $display("Data      | Amt | Output   | Expected");
+
+        // Loop over all 256 data values and 8 shift amounts
+        for (int i = 0; i < 256; i++) begin
+            for (int j = 0; j < 8; j++) begin
+                data = i;  // Assign current data value
+                amt = j;   // Assign current shift amount
+                #1;        // Allow time for propagation
+
+                // Display the current test case details
+                $display("%b |  %0d  | %b | %b", data, amt, out, rotate_right(data, amt));
+
+                // Check if the actual output matches the expected value
+                if (out !== rotate_right(data, amt)) begin
+                    $display("FAIL: Data=%b, Amt=%0d, Expected=%b, Got=%b", 
+                             data, amt, rotate_right(data, amt), out);
+                    $fatal;  // Stop simulation on first failure
+                end
+            end
+        end
+
+        $display("All exhaustive tests passed!");
+        $finish;  // End simulation
+    end
+endmodule
+
+
+
+
+
+// `timescale 1ns / 10ps
+
+// module testbench;
+//     logic [7:0] data;
+//     logic [2:0] amt;
+//     logic [7:0] out;
+
+//     // Instantiate the DUT (Device Under Test)
+//     barrel_shifter_8bit dut (
+//         .data(data),
+//         .amt(amt),
+//         .out(out)
+//     );
+
+//     // Task for displaying test results
+//     task check_output(input logic [7:0] expected);
+//         if (out === expected)
+//             $display("PASS: Data=%b, Amt=%0d, Output=%b", data, amt, out);
+//         else begin
+//             $display("FAIL: Data=%b, Amt=%0d, Expected=%b, Got=%b", data, amt, expected, out);
+//             $fatal;  // Stop simulation if any test fails
+//         end
+//     endtask
+
+//     // Main test procedure
+//     initial begin
+//         $display("Starting functional tests...");
+
+//         // Test Case 1: No rotation (amt = 0)
+//         data = 8'b10110011; amt = 3'd0;
+//         #1; check_output(8'b10110011);
+
+//         // Test Case 2: Rotate by 1 bit (amt = 1)
+//         data = 8'b10110011; amt = 3'd1;
+//         #1; check_output(8'b11011001);
+
+//         // Test Case 3: Rotate by 2 bits (amt = 2)
+//         data = 8'b10110011; amt = 3'd2;
+//         #1; check_output(8'b11101100);
+
+//         // Test Case 4: Rotate by 4 bits (amt = 4)
+//         data = 8'b10110011; amt = 3'd4;
+//         #1; check_output(8'b00111011);
+
+//         // Test Case 5: Rotate by 7 bits (amt = 7)
+//         data = 8'b11100001; amt = 3'd7;
+//         #1; check_output(8'b11000011);
+
+//         // Test Case 6: All 1s input, rotate by 3 bits
+//         data = 8'b11111111; amt = 3'd3;
+//         #1; check_output(8'b11111111);  // Rotation has no effect on all 1s
+
+//         // Test Case 7: All 0s input, rotate by any amount
+//         data = 8'b00000000; amt = 3'd5;
+//         #1; check_output(8'b00000000);  // Rotation has no effect on all 0s
+
+//         $display("All functional tests passed!");
+//         $finish;  // End simulation
+//     end
+// endmodule
+
+
+
+
+
+// `timescale 1ns / 10ps
+
+// module testbench;
+//   // DUT input-output signals
+//   logic [7:0] data;
+//   logic [2:0] amt;
+//   logic [7:0] out;
+
+//   // Instantiate the DUT (barrel shifter)
+//   barrel_shifter_8bit dut (
+//     .data(data),
+//     .amt(amt),
+//     .out(out)
+//   );
+
+//   // Task to perform exhaustive testing
+//   task automatic test_shift;
+//     integer i, j;
+//     logic [7:0] expected_out;
+    
+//     for (i = 0; i < 256; i++) begin  // Loop over all data values
+//       for (j = 0; j < 8; j++) begin  // Loop over all shift amounts
+//         data = i;
+//         amt = j;
+//         #1;  // Small delay to allow output to stabilize
+
+//         // Calculate expected output for comparison
+//         expected_out = (data >> j) | (data << (8 - j));
+
+//         // Check the result
+//         if (out !== expected_out) begin
+//           $error("Test failed for data=%b, amt=%0d: Expected=%b, Got=%b", 
+//                  data, amt, expected_out, out);
+//         end else begin
+//           $display("Test passed for data=%b, amt=%0d", data, amt);
+//         end
+//       end
+//     end
+//   endtask
+
+//   // Initialize the test
+//   initial begin
+//     $display("Starting Exhaustive Verification of Barrel Shifter...");
+//     test_shift();  // Call the task to run all tests
+//     $display("Exhaustive Verification Completed.");
+//     $finish;
+//   end
+// endmodule

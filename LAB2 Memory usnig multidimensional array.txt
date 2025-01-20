@@ -1,0 +1,63 @@
+module memory_47x64K (
+    input  logic             clk,        // Clock input
+    input  logic             rst_n,      // Active-low reset
+
+    // Write Port
+    input  logic             wr_strobe,  // Write enable strobe
+    input  logic [15:0]      wr_addr,    // Write address (16-bit)
+    input  logic [46:0]      wr_data,    // Write data (47-bit)
+
+    // Read Port
+    input  logic             rd_strobe,  // Read enable strobe
+    input  logic [15:0]      rd_addr,    // Read address (16-bit)
+    output logic [46:0]      rd_data     // Read data (47-bit)
+);
+
+    // Memory: 4 Banks, 47-bit x 16K each
+    logic [46:0] mem [3:0][0:16383];  // 4 banks with 16K locations each
+
+    // Internal signals for bank selection and addressing
+    wire [1:0]  wr_bank  = wr_addr[15:14];  // Bank select for write
+    wire [1:0]  rd_bank  = rd_addr[15:14];  // Bank select for read
+    wire [13:0] wr_index = wr_addr[13:0];   // Address within the selected write bank
+    wire [13:0] rd_index = rd_addr[13:0];   // Address within the selected read bank
+
+    // Register to hold read data
+    logic [46:0] rd_data_reg;
+    logic [46:0] rd_data_delayed;
+
+    // Counter to introduce a 5-cycle read delay
+    logic [2:0] rd_delay_counter;  // 3-bit counter (counts up to 5)
+    logic       rd_valid;          // Flag to indicate valid read data
+
+    // Write Operation (synchronous)
+    always_ff @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            // Optional: Clear memory during reset (not needed for functionality)
+        end else if (wr_strobe) begin
+            mem[wr_bank][wr_index] <= wr_data;  // Write data to selected bank
+        end
+    end
+
+    // Read Operation (start read process)
+    always_ff @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            rd_data_reg <= 47'd0;
+            rd_valid <= 0;
+            rd_delay_counter <= 3'd0;
+        end else if (rd_strobe) begin
+            rd_data_reg <= mem[rd_bank][rd_index];  // Read from memory
+            rd_delay_counter <= 3'd1;               // Start delay counter
+            rd_valid <= 0;                          // Invalidate data initially
+        end else if (rd_delay_counter != 3'd0) begin
+            rd_delay_counter <= rd_delay_counter + 1;
+            if (rd_delay_counter == 3'd5) begin
+                rd_valid <= 1;  // Mark data as valid after 5 cycles
+            end
+        end
+    end
+
+    // Output logic: Assign read data only if valid
+    assign rd_data = rd_valid ? rd_data_reg : 47'd0;
+
+endmodule

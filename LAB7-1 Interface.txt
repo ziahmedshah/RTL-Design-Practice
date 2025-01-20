@@ -1,0 +1,26 @@
+module tcounter (
+  input logic clk,             // Global clock
+  input logic reset,           // Global reset
+  counter_if intf              // Interface for control and data signals
+);
+
+  // Counter Logic
+  always_ff @(posedge clk or posedge reset) begin
+    if (reset)
+      intf.count <= 32'b0; // Reset counter
+    else if (intf.clr)
+      intf.count <= 32'b0; // Clear counter
+    else if (intf.load)
+      intf.count <= intf.din; // Load counter with input value
+    else if (intf.enable) begin
+      if (intf.inc) intf.count <= intf.count + 1; // Increment
+      if (intf.dec) intf.count <= intf.count - 1; // Decrement
+    end
+  end
+
+  // Done Signal Logic
+  always_comb begin
+    intf.done = (intf.count == 0);  // Assert when counter reaches 0
+  end
+
+endmodule

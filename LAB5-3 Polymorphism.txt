@@ -1,0 +1,80 @@
+// Base class definition
+class Vehicle;
+    int wheels; 
+// Constructor to initialize the wheels attribute
+    function new(int w);
+        wheels = w;
+    endfunction
+// Virtual method to display information about the vehicle
+    virtual function void display();
+        $display("Vehicle with %0d wheels.", wheels);
+    endfunction
+endclass
+
+// Derived class Car
+class Car extends Vehicle;
+    string brand;  // Attribute for the car brand
+
+// Constructor to initialize wheels and brand
+    function new(int w, string b);
+        super.new(w);  // Call the base class constructor
+        brand = b;
+    endfunction
+
+// Override the display method
+  function void display();
+    	$display("Car: Brand = %s, Wheels = %0d", brand, 			wheels);
+    endfunction
+endclass
+
+// Derived class Truck
+class Truck extends Vehicle;
+    int load_capacity;  // Attribute for load capacity in tons
+
+    // Constructor to initialize wheels and load capacity
+    function new(int w, int lc);
+        super.new(w);  // Call the base class constructor
+        load_capacity = lc;
+    endfunction
+
+    // Override the display method
+    function void display();
+        $display("Truck: Load Capacity = %0d tons, Wheels = %0d", load_capacity, wheels);
+    endfunction
+endclass
+
+// Derived class Bike
+class Bike extends Vehicle;
+    string bike_type;  // Attribute for bike type (e.g., mountain bike)
+
+    // Constructor to initialize wheels and bike type
+    function new(int w, string t);
+        super.new(w);  // Call the base class constructor
+        bike_type = t;
+    endfunction
+
+    // Override the display method
+    function void display();
+        $display("Bike: Type = %s, Wheels = %0d", bike_type, wheels);
+    endfunction
+endclass
+
+// Testbench to demonstrate polymorphism
+	module class_example;
+    initial begin
+// Base class handles
+        Vehicle v1, v2, v3;
+// Instantiate derived class objects
+        Car c = new(4, "Toyota");
+        Truck t = new(6, 10);
+        Bike b = new(2, "Mountain Bike");
+// Assign derived class objects to base class handles
+        v1 = c;
+        v2 = t;
+        v3 = b;
+// Call the display() method using base class handles
+        v1.display();  // Display car details
+        v2.display();  // Display truck details
+        v3.display();  // Display bike details
+    end
+endmodule

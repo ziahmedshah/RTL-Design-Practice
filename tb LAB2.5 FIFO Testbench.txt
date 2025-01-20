@@ -1,0 +1,109 @@
+module test;
+    parameter DW = 32;  // Data width
+    parameter AW = 9;   // Address width
+    parameter RS = 512; // FIFO size
+
+    // Signals for FIFO
+    logic pop;
+    logic push;
+    logic [31:0] dout;
+    logic [31:0] din;
+    logic empty, full;
+    logic reset;
+    logic clk;
+
+    // Reference queue for comparison
+    logic [31:0] refq[$];  // Dynamic array to store reference data
+    logic [31:0] rd_data, wr_data;
+
+    // Instantiate the DUT (FIFO)
+    fifo dut (
+        .clk(clk), .rst(reset), .dump(), 
+        .din(din), .dout(dout), 
+        .push(push), .pop(pop), 
+        .empty(empty), .full(full)
+    );
+
+    // Clock generation
+    initial begin
+        clk = 0;
+        forever #5 clk = ~clk;
+    end
+
+    // Main test logic
+    initial begin
+        wr_data = $urandom();  // Random data for testing
+        reset_fifo();  // Reset FIFO at the beginning
+
+        // Random delay before write
+        repeat ($urandom() % 16) @(posedge clk);
+        
+        // Write two elements
+        wr(32'h10);  
+        wr(32'h11);  
+
+        // Random delay before read
+        repeat ($urandom() % 16) @(posedge clk);
+
+        // Read two elements
+        rd(rd_data);  
+        rd(rd_data);  
+
+        @(posedge clk);
+        repeat (1000) @(posedge clk);  // Wait for 1000 clock cycles
+        $finish;  // End simulation
+    end
+
+    // Task to reset the FIFO and reference queue
+    task reset_fifo();
+        begin
+            reset = 1;
+            @(posedge clk);  // Apply reset for one clock cycle
+            reset = 0;
+            refq.delete();  // Clear the reference queue
+            $display("FIFO Reset at %0t", $time);
+        end
+    endtask
+
+    // Task to write data to FIFO and reference queue
+    task wr(logic [31:0] wd);
+        begin
+            if (!full) begin
+                din = wd;
+                push = 1;
+                @(posedge clk);
+                push = 0;
+                refq.push_back(wd);  // Store in reference queue
+                $display("Wrote %h to FIFO at %0t", wd, $time);
+            end else begin
+                $display("FIFO is full. Write skipped at %0t", $time);
+            end
+        end
+    endtask
+
+    // Task to read data from FIFO and compare with reference queue
+    task rd(output logic [31:0] rd);
+        begin
+            if (!empty) begin
+                pop = 1;
+                @(posedge clk);
+                pop = 0;
+                rd = dout;
+
+                // Check against the reference queue
+                if (refq.size() > 0) begin
+                    logic [31:0] expected = refq.pop_front();  // Get the expected value
+                    if (rd !== expected) begin
+                        $error("Mismatch: Read %h, Expected %h at %0t", rd, expected, $time);
+                    end else begin
+                        $display("Read %h from FIFO at %0t", rd, $time);
+                    end
+                end else begin
+                    $error("Reference queue is empty, but read was attempted at %0t", $time);
+                end
+            end else begin
+                $display("FIFO is empty. Read skipped at %0t", $time);
+            end
+        end
+    endtask
+endmodule

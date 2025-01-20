@@ -1,0 +1,35 @@
+class myex;
+    int a;
+    int b;
+
+    // Function to generate random values
+    function void genex();
+        a = $urandom() % 7;
+        b = $urandom() % 23;
+    endfunction
+
+    // Task to print the values
+    task pr();
+        $display("a: %0d, b: %0d", a, b);
+    endtask
+endclass
+
+module test();
+    // Declare a fixed-size array of `myex` objects
+    myex exArr[10];  // Array with 10 elements
+
+    initial begin
+        // Construct the array
+        for (int i = 0; i < $size(exArr); i++) begin
+            exArr[i] = new();  // Create a new instance for each entry
+        end
+
+        // Randomize and print all entries
+        for (int i = 0; i < $size(exArr); i++) begin
+            exArr[i].genex();  // Generate random values for each entry
+            exArr[i].pr();      // Print the values
+        end
+
+        $finish;  // End simulation
+    end
+endmodule

@@ -1,0 +1,14 @@
+module hello_world();
+// Task defined
+  task greet(string greeting);
+    $display("At time %0t: %s", $time, greeting);  //Display simulation time and greeting
+  endtask
+
+  initial begin
+    greet("My name is Zia Ahmed Shah");  // Call the task
+    #10;  // Optional delay to see time change
+    greet("How are you all!");  // Call the task again after delay
+    $finish;  // End the simulation
+  end
+
+endmodule

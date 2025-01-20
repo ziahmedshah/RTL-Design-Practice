@@ -1,0 +1,28 @@
+class Random477BitGenerator;
+    bit [476:0] rand_num;  // 477-bit variable
+
+    // Function to generate the 477-bit random number
+    function void generatee();
+        int i;
+        for (i = 0; i < 477; i += 32) begin
+            rand_num[i +: 32] = $urandom();  // Generate 32-bit random chunks
+        end
+    endfunction
+
+    // Function to print the 477-bit number in hexadecimal
+    function void print();
+        $display("Generated 477-bit number: %h", rand_num);
+    endfunction
+endclass
+
+module random_477bit_test;
+    Random477BitGenerator generatorr;  // Create an object of the class
+
+    initial begin
+        // Instantiate the class and generate the 477-bit random number
+        generatorr = new();
+        generatorr.generatee();  // Call generate function
+        generatorr.print();     // Call print function
+        $finish;
+    end
+endmodule

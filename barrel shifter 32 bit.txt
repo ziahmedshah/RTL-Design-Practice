@@ -1,0 +1,31 @@
+`timescale 1ns / 10ps
+
+// Generalized Barrel Shifter
+module barrel_shifter_generic #(parameter N = 32) (
+    input  logic [N-1:0] data,
+    input  logic [clog2(N)-1:0] amt,
+    output logic [N-1:0] out
+);
+
+    // Define the clog2 function
+    function integer clog2(input integer value);
+        integer result;
+        begin
+            result = 0;
+            while (value > (1 << result)) begin
+                result = result + 1;
+            end
+            clog2 = result;
+        end
+    endfunction
+
+    // Rotate right function
+    function automatic [N-1:0] rotate_right(input [N-1:0] d, input [clog2(N)-1:0] a);
+        a = a % N;  // Ensure the shift amount is within bounds
+        rotate_right = (d >> a) | (d << (N - a));
+    endfunction
+
+    always_comb begin
+        out = rotate_right(data, amt);
+    end
+endmodule

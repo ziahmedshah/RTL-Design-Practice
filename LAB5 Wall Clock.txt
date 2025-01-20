@@ -1,0 +1,36 @@
+`timescale 1ms/1us
+
+class Wallclock;
+    // Data members
+    int hours;
+    int minutes;
+    int seconds;
+
+    // Constructor
+    function new();
+        hours = 0;
+        minutes = 0;
+        seconds = 0;
+    endfunction
+
+    // Method to update the current time
+    function void update_time();
+        seconds += 1; // Increment seconds
+        if (seconds >= 60) begin
+            seconds = 0;
+            minutes += 1; // Increment minutes
+        end
+        if (minutes >= 60) begin
+            minutes = 0;
+            hours += 1; // Increment hours
+        end
+        if (hours >= 24) begin
+            hours = 0; // Reset hours after 24
+        end
+    endfunction
+
+    // Method to display current time in hh:mm:ss format
+    function void display_time();
+        $display("Current Time: %02d:%02d:%02d", hours, minutes, seconds);
+    endfunction
+endclass

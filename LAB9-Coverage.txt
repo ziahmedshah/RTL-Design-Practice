@@ -1,0 +1,80 @@
+// Packet class definition
+class packet;
+  // Random variables
+  rand bit [47:0] dest;     // Destination address
+  rand bit [47:0] src;      // Source address
+  rand bit [15:0] len;      // Packet length
+  rand bit [7:0] payld[$];  // Dynamic payload array
+  int cnt;                  // Packet counter
+
+  // Constraints
+  constraint len_lim {
+    payld.size() inside {[0:1500]};  // Payload size within range
+  }
+  
+  constraint pktc {
+    len == (payld.size() + 18);  // Length must match payload + headers
+    dest inside {[24:48]};       // Destination in range 24 to 48
+    src inside {[256:292]};      // Source in range 256 to 292
+  }
+
+  // Constructor
+  function new(int cnt);
+    this.cnt = cnt;
+    pkt_cg = new();  // Initialize covergroup
+  endfunction
+
+  // Packet generation function
+  function packet gen();
+    packet pkt = new(0);  // Create new packet
+    if (!pkt.randomize())
+      $display("Randomization Error\n");
+    else
+      return pkt;
+  endfunction
+
+  // Covergroup to track packet size
+  covergroup pkt_cg;
+    coverpoint (payld.size() + len + 48 + 48 + 16) {  // Packet size in bytes
+      bins size_64    = {64};    // 64-byte packets
+      bins size_128   = {128};   // 128-byte packets
+      bins size_192   = {192};   // 192-byte packets
+      bins size_256   = {256};   // 256-byte packets
+      bins size_512   = {512};   // 512-byte packets
+      bins size_768   = {768};   // 768-byte packets
+      bins size_1024  = {1024};  // 1024-byte packets
+      bins size_1518  = {1518};  // 1518-byte packets
+    }
+  endgroup
+
+  // Function to sample covergroup
+  function void sample();
+    pkt_cg.sample();
+  endfunction
+
+  // Function to display coverage
+  function void display_coverage();
+    int total_cov = $get_coverage();  // Calculate total coverage
+    $display("------ Coverage Report ------");
+    $display("Total Coverage: %0d%%", total_cov);
+  endfunction
+endclass
+
+// Testbench module
+module testbench;
+  packet pkt;  // Packet instance
+
+  initial begin
+    pkt = new(0);  // Initialize packet object
+
+    // Generate and sample packets
+    repeat (100) begin
+      pkt = pkt.gen();  // Generate a new packet
+      pkt.sample();     // Sample the packet coverage
+    end
+
+    // Display the final coverage report
+    pkt.display_coverage();
+    $display("Simulation Completed.");
+  end
+endmodule

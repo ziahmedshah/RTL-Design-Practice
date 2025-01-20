@@ -1,0 +1,23 @@
+module updown_ctr (
+    input logic clk,         // Clock input
+    input logic reset,       // Reset input
+    input logic load,        // Load control
+    input logic up,          // Up or down
+    input logic enable,      // Enable counting
+    input logic [31:0] din,  // Load data
+    output logic [31:0] count // Output of counter
+);
+    always_ff @(posedge clk or posedge reset) begin
+        if (reset) begin
+            count <= 32'd0; // Reset count to 0
+        end else if (load) begin
+            count <= din;   // Load din into count
+        end else if (enable) begin
+            if (up) begin
+                count <= count + 32'd1; // Increment count
+            end else begin
+                count <= count - 32'd1; // Decrement count
+            end
+        end
+    end
+endmodule

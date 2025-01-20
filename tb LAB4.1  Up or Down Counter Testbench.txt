@@ -1,0 +1,81 @@
+module test;
+    logic clk;
+    logic reset;
+    logic load;
+    logic [31:0] din;
+    logic up_down;  // Up/Down control
+    logic enable;
+    logic [31:0] count;
+
+    // Instantiate the DUT (Up/Down Counter)
+    updown_ctr dut (
+        .clk(clk), 
+        .reset(reset), 
+        .load(load), 
+        .up(up_down), 
+        .enable(enable), 
+        .din(din), 
+        .count(count)
+    );
+
+    // Clock generation
+    initial begin
+        clk = 0;
+        forever #5 clk = ~clk;  // Clock with 10ns period
+    end
+
+    // Main test sequence
+    initial begin
+        reset_ctr();  // Reset counter
+        ld_data(32'd500);  // Load initial value into the counter
+
+        $display("@%0t: Counter Loaded with %0d", $time, count);
+        count_up();  // Set to count up
+        start();  // Enable counting
+
+        // Wait until the counter reaches 700
+        while (count <= 700) @(posedge clk);
+
+        enable = 1'b0;  // Stop counting
+        $display("@%0t: Final Counter Value: %0d", $time, count);
+
+        $finish;  // End simulation
+    end
+
+    // Task to reset the counter for 3 clock cycles
+    task reset_ctr();
+        begin
+            reset = 1;
+            repeat (3) @(posedge clk);  // Hold reset for 3 clock cycles
+            reset = 0;
+            $display("@%0t: Counter Reset", $time);
+        end
+    endtask
+
+    // Task to load data into the counter
+    task ld_data(logic [31:0] din_val);
+        begin
+            load = 1;
+            din = din_val;
+            @(posedge clk);  // Wait for one clock cycle
+            load = 0;
+            $display("@%0t: Loaded %0d into Counter", $time, din_val);
+        end
+    endtask
+
+    // Task to set the counter to count up
+    task count_up();
+        begin
+            up_down = 1;  // Set to count up
+            $display("@%0t: Counter set to Count Up", $time);
+        end
+    endtask
+
+    // Task to enable counting
+    task start();
+        begin
+            enable = 1;  // Enable counting
+            $display("@%0t: Counting Enabled", $time);
+        end
+    endtask
+endmodule
